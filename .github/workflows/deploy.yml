@@ -1,0 +1,47 @@
+name: "ShraddhaWorker : Initialize"
+
+on:
+  push:
+  workflow_dispatch:
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+       - name: "🛃 Checkout Tele-Linux 🛃"
+         uses: actions/checkout@main
+       
+       - name: "⛔️ Cancel Duplicate Runs ⛔️"
+         uses: styfle/cancel-workflow-action@0.9.0
+         with:
+            all_but_latest: true
+            access_token: ${{ github.token }}
+       - name: "📈 Initialize Tele-Linux 📉"
+         continue-on-error: true
+         run: |
+           git config --global user.name ${{ secrets.GIT_NAME }}
+           git config --global user.email ${{ secrets.GIT_EMAIL }}
+           git config --global credential.helper store
+           echo "https://${{ secrets.GIT_NAME }}:${{ secrets.GIT_TOKEN }}@github.com" > ~/.git-credentials
+       - name: "🧬 Clone Repository 🧬"
+         continue-on-error: true
+         run: |
+           git clone https://github.com/ForShraddha/Shraddha shraddhabot
+           cd shraddhabot
+           wget ${{ secrets.CONFIG_URL }}
+       - name: "Running Shraddha Server 🏃‍♂️💨💨"
+         timeout-minutes: 350
+         continue-on-error: true
+         run: |
+           cd shraddhabot
+           docker build . -t shraddhabot
+           docker run shraddhabot
+       - name: "♻️ Re-Run Shraddha Server ♻️"
+         continue-on-error: true
+         run: |
+              git clone https://github.com/${GITHUB_REPOSITORY} loop
+              cd loop || exit 1
+              echo $(date -u +%T%P) >> loop.txt
+              git add loop.txt
+              git commit -m "reflectbot : Re-Run $(date -u +%D-%T%P)"
+              git push -q https://${{ secrets.GIT_TOKEN }}@github.com/${GITHUB_REPOSITORY} HEAD:main
